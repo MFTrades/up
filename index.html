@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFT - Deriv MT5 Trading Journal</title>
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            
+            --green: #059669;
+            --green-bg: #ecfdf5;
+            --green-border: #a7f3d0;
+            --green-text: #065f46;
+            
+            --red: #e11d48;
+            --red-bg: #fff1f2;
+            --red-border: #fecdd3;
+            --red-text: #9f1239;
+
+            --blue: #2563eb;
+            --blue-bg: #eff6ff;
+            --blue-border: #bfdbfe;
+            
+            --deriv-red: #ff444f;
+            --deriv-bg: rgba(255, 68, 79, 0.08);
+
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            --radius: 10px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .text-green { color: var(--green) !important; }
+        .text-red { color: var(--red) !important; }
+        .text-muted { color: var(--text-muted); }
+        
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+        .badge-green { background: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+        .badge-red { background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red-border); }
+        .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+        .badge-neutral { background: var(--bg-subtle); color: var(--text-muted); border: 1px solid var(--border); }
+        .badge-deriv { background: var(--deriv-bg); color: var(--deriv-red); border: 1px solid rgba(255, 68, 79, 0.25); }
+
+        /* DERIV ICON BADGE */
+        .deriv-sym-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; background: #ff444f; border-radius: 50%; color: #fff; font-size: 10px; flex-shrink: 0; margin-right: 6px; }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; border: 1px solid transparent; }
+        .btn-primary { background: var(--text-main); color: #ffffff; }
+        .btn-primary:hover { background: #1e293b; box-shadow: var(--shadow-sm); }
+        .btn-green { background: var(--green); color: #ffffff; }
+        .btn-green:hover { background: #047857; }
+        .btn-secondary { background: var(--bg-surface); border-color: var(--border); color: var(--text-main); }
+        .btn-secondary:hover { background: var(--bg-subtle); border-color: var(--border-hover); }
+        .btn-danger { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+
+        .app-shell { display: flex; flex: 1; height: 100vh; overflow: hidden; }
+        .sidebar { width: 240px; background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
+        .brand { height: 64px; display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid var(--border); }
+        .brand-icon { width: 32px; height: 32px; background: var(--deriv-red); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 15px; }
+        
+        .nav-menu { padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.15s; }
+        .nav-item:hover { background: var(--bg-subtle); color: var(--text-main); }
+        .nav-item.active { background: var(--bg-subtle); color: var(--text-main); font-weight: 700; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .topbar { height: 64px; background: var(--bg-surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; flex-shrink: 0; position: sticky; top: 0; z-index: 20; }
+        
+        .mobile-tabs { display: none; background: var(--bg-surface); border-bottom: 1px solid var(--border); padding: 8px 16px; gap: 8px; overflow-x: auto; }
+        .mobile-tab-btn { flex: 1; padding: 8px 12px; font-size: 12px; font-weight: 600; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px; white-space: nowrap; cursor: pointer; }
+        .mobile-tab-btn.active { background: var(--text-main); color: #fff; border-color: var(--text-main); }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .mobile-tabs { display: flex; }
+            .top-stats-bar { display: none; }
+        }
+
+        .content-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 24px; max-width: 1440px; margin: 0 auto; width: 100%; }
+
+        .panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+        .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .panel-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
+        .panel-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+        .kpi-tile { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between; }
+        .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+        .kpi-value { font-size: 28px; font-weight: 800; margin-top: 10px; line-height: 1; letter-spacing: -0.5px; }
+        .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+        .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        @media (max-width: 1024px) { .chart-grid { grid-template-columns: 1fr; } }
+        .canvas-container { position: relative; width: 100%; height: 260px; padding: 10px 0; }
+
+        .cal-header-row { display: grid; grid-template-columns: repeat(7, 1fr) 1.1fr; gap: 8px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr) 1.1fr; gap: 8px; }
+        .cal-day { min-height: 100px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: all 0.15s; }
+        .cal-day:hover { border-color: var(--border-hover); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+        .cal-day.has-profit { background: var(--green-bg); border-color: var(--green-border); }
+        .cal-day.has-loss { background: var(--red-bg); border-color: var(--red-border); }
+        .cal-day.is-empty { background: var(--bg-subtle); opacity: 0.4; cursor: default; }
+        .cal-week-rollup { min-height: 100px; background: #fafafa; border: 1px dashed var(--border); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+
+        .table-wrap { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+        th { background: #fafafa; color: var(--text-muted); padding: 12px 16px; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--bg-subtle); cursor: pointer; }
+
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 90; display: none; }
+        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 480px; height: 100vh; background: var(--bg-surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 100; transform: translateX(100%); transition: transform 0.25s ease-in-out; display: flex; flex-direction: column; }
+        .drawer.open { transform: translateX(0); }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+        .form-group input, .form-group select, .form-group textarea { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-main); background: #fff; outline: none; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <div class="brand-icon">D</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 15px; letter-spacing: -0.3px;">MFT <span style="color: var(--deriv-red);">Deriv</span></div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">MT5 SYNTHETICS BOOK</div>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" onclick="switchView('dashboard')">📊 Dashboard</button>
+                <button class="nav-item" onclick="switchView('calendar')">📅 P&L Calendar</button>
+                <button class="nav-item" onclick="switchView('trades')">📑 Trade Log</button>
+                <button class="nav-item" onclick="switchView('analytics')">📈 Deriv Edge Matrix</button>
+            </nav>
+        </div>
+
+        <div style="padding: 16px; border-top: 1px solid var(--border); font-size: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700; color: var(--text-main);">Deriv MT5 Terminal</span>
+                <span class="badge badge-deriv">Live</span>
+            </div>
+            <div class="text-muted font-mono" style="font-size: 10px; margin-top: 3px;">Synthetics 24/7/365</div>
+            <div style="margin-top: 12px; display: flex; gap: 6px;">
+                <button class="btn btn-secondary btn-sm" onclick="loadDerivDemo()" style="flex: 1;">Load Demo</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportCSV()" title="Export CSV">Export</button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <header class="topbar">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 15px; font-weight: 700;">Deriv Synthetics Overview</span>
+                <span class="badge badge-neutral">Deriv MT5 Live</span>
+            </div>
+
+            <div class="top-stats-bar" style="display: flex; gap: 24px; font-size: 12px;">
+                <div><span class="text-muted">Net P&L:</span> <strong id="topbar-pnl" class="font-mono text-green">$0.00</strong></div>
+                <div><span class="text-muted">Win Rate:</span> <strong id="topbar-wr" class="font-mono">0.0%</strong></div>
+                <div><span class="text-muted">Profit Factor:</span> <strong id="topbar-pf" class="font-mono">0.00</strong></div>
+                <div><span class="text-muted">Discipline:</span> <strong id="topbar-rules" class="font-mono text-green">100%</strong></div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-green" onclick="openModal()">+ Log Deriv Trade</button>
+            </div>
+        </header>
+
+        <nav class="mobile-tabs">
+            <button class="mobile-tab-btn active" onclick="switchView('dashboard')">Dashboard</button>
+            <button class="mobile-tab-btn" onclick="switchView('calendar')">Calendar</button>
+            <button class="mobile-tab-btn" onclick="switchView('trades')">Trade Log</button>
+            <button class="mobile-tab-btn" onclick="switchView('analytics')">Deriv Matrix</button>
+        </nav>
+
+        <div class="content-body">
+            
+            <!-- VIEW 1: DASHBOARD -->
+            <section id="view-dashboard" style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="kpi-row">
+                    <div class="kpi-tile">
+                        <div class="kpi-label"><span>Net Cumulative P&L</span> <span class="badge badge-green">USD Balance</span></div>
+                        <div id="kpi-net-pnl" class="kpi-value font-mono">$0.00</div>
+                        <div id="kpi-trades-count" class="kpi-sub">0 closed Deriv trades</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label"><span>Win Rate</span> <span id="kpi-wl-ratio" class="font-mono text-muted">0W - 0L</span></div>
+                        <div id="kpi-win-rate" class="kpi-value font-mono">0.0%</div>
+                        <div id="kpi-break-even" class="kpi-sub">0 Breakeven executions</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label"><span>Profit Factor</span> <span class="badge badge-neutral">Wins / Losses</span></div>
+                        <div id="kpi-profit-factor" class="kpi-value font-mono">0.00</div>
+                        <div id="kpi-gross-ratio" class="kpi-sub">Gross: $0 / $0</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label"><span>Trade Expectancy</span> <span class="badge badge-blue">Per Execution</span></div>
+                        <div id="kpi-expectancy" class="kpi-value font-mono">$0.00</div>
+                        <div id="kpi-avg-r" class="kpi-sub">Avg R-Multiple: 0.00R</div>
+                    </div>
+                </div>
+
+                <div class="chart-grid">
+                    <div class="panel" style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div>
+                                <div class="panel-title">Cumulative Growth Curve</div>
+                                <div class="panel-desc">Account balance trajectory across closed synthetic & CFD positions</div>
+                            </div>
+                            <span id="chart-max-dd" class="badge badge-red font-mono">Max DD: $0.00</span>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="equityCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="panel" style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div>
+                                <div class="panel-title">Daily Deriv Net P&L</div>
+                                <div class="panel-desc">Session gains vs losses</div>
+                            </div>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="dailyBarCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-row">
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Risk & Payout Performance</div>
+                        <div style="margin-top: 10px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Average Win:</span>
+                            <strong id="stat-avg-win" class="font-mono text-green">$0.00</strong>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Average Loss:</span>
+                            <strong id="stat-avg-loss" class="font-mono text-red">$0.00</strong>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Win / Loss Ratio:</span>
+                            <strong id="stat-wl-ratio" class="font-mono">0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Deriv Streaks & Drawdown</div>
+                        <div style="margin-top: 10px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Max Win Streak:</span>
+                            <strong id="stat-max-win-streak" class="font-mono text-green">0 trades</strong>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Max Loss Streak:</span>
+                            <strong id="stat-max-loss-streak" class="font-mono text-red">0 trades</strong>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Peak Drawdown ($):</span>
+                            <strong id="stat-max-dd-val" class="font-mono text-red">$0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Deriv Discipline & Fees</div>
+                        <div style="margin-top: 10px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Rule Adherence:</span>
+                            <strong id="stat-discipline-score" class="font-mono text-green">100%</strong>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Cost of Mistakes:</span>
+                            <strong id="stat-mistake-cost" class="font-mono text-red">$0.00</strong>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-muted">Swaps & Comm.:</span>
+                            <strong id="stat-commissions-total" class="font-mono text-muted">$0.00</strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: CALENDAR -->
+            <section id="view-calendar" style="display: none;">
+                <div class="panel" style="padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h2 style="font-size: 16px; font-weight: 800;">Deriv Monthly Performance Heatmap</h2>
+                            <p class="panel-desc">TradeZella-style Weekly Cumulative Roll-up</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">&larr; Prev</button>
+                            <span id="calendar-current-month" style="font-size: 14px; font-weight: 700; min-width: 140px; text-align: center;">Month Year</span>
+                            <button class="btn btn-secondary btn-sm" onclick="changeMonth(1)">Next &rarr;</button>
+                        </div>
+                    </div>
+
+                    <div class="cal-header-row">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        <div style="color: var(--blue);">Week Total</div>
+                    </div>
+                    <div id="calendar-grid-box" class="cal-grid"></div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: TRADE LOG -->
+            <section id="view-trades" style="display: none;">
+                <div class="panel">
+                    <div class="panel-header" style="flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="trade-search" placeholder="Search VOLATILITY, STEP, Spike..." oninput="filterTradesTable()" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; width: 240px; outline: none;">
+                            <select id="trade-filter-side" onchange="filterTradesTable()" style="padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; outline: none;">
+                                <option value="ALL">All Directions</option>
+                                <option value="Long">Buy / Long</option>
+                                <option value="Short">Sell / Short</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary btn-sm" onclick="clearAllData()">Reset Data</button>
+                            <button class="btn btn-green btn-sm" onclick="openModal()">+ Add Deriv Trade</button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Deriv MT5 Symbol</th>
+                                    <th>Side</th>
+                                    <th>Entry &rarr; Exit</th>
+                                    <th>Lot Size</th>
+                                    <th>Net P&L (USD)</th>
+                                    <th>R:R</th>
+                                    <th>Strategy</th>
+                                    <th>Mistake Tag</th>
+                                    <th>Rules</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trades-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 4: DERIV EDGE ANALYTICS -->
+            <section id="view-analytics" style="display: none; display: flex; flex-direction: column; gap: 20px;">
+                <div class="panel" style="padding: 20px;">
+                    <div class="panel-title">Exact Deriv Symbol Performance Matrix</div>
+                    <div class="panel-desc" style="margin-bottom: 16px;">Directly tracks your edge on Volatility 90 (1s), Step Index 400, Volatility 75, etc.</div>
+                    <div id="analytics-instruments-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;"></div>
+                </div>
+
+                <div class="panel" style="padding: 20px;">
+                    <div class="panel-title">Performance by Day of Week</div>
+                    <div class="panel-desc" style="margin-bottom: 16px;">Deriv Synthetics run 24/7/365: see weekend vs weekday profitability</div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Trades</th>
+                                    <th>Win Rate</th>
+                                    <th>Profit Factor</th>
+                                    <th>Gross Wins</th>
+                                    <th>Gross Losses</th>
+                                    <th>Net P&L</th>
+                                </tr>
+                            </thead>
+                            <tbody id="day-of-week-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel" style="padding: 20px;">
+                    <div class="panel-title">Deriv Strategy Edge</div>
+                    <div class="panel-desc" style="margin-bottom: 16px;">Spike Catching vs Tick Scalping vs Market Structure</div>
+                    <div id="analytics-playbook-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;"></div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<!-- TRADE DETAIL DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="tradeDrawer">
+    <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3 id="drawer-title" style="font-size: 16px; font-weight: 800;">Deriv Trade Details</h3>
+            <span id="drawer-date" class="text-muted" style="font-size: 12px;">--</span>
+        </div>
+        <button onclick="closeDrawer()" class="btn btn-secondary btn-sm">&times; Close</button>
+    </div>
+    <div id="drawer-body" style="padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px;"></div>
+</div>
+
+<!-- MODAL: ADD DERIV TRADE -->
+<div class="modal-overlay" id="tradeModal">
+    <div class="modal-card">
+        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="font-size: 15px; font-weight: 800;">Log Deriv MT5 Trade</h3>
+                <p class="panel-desc">Supports all Volatility Indices, Step Index, Boom/Crash & MT5 Swaps</p>
+            </div>
+            <button onclick="closeModal()" class="btn btn-secondary btn-sm">&times;</button>
+        </div>
+        <form onsubmit="handleFormSubmit(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Exact Deriv Symbol (from MT5)</label>
+                    <input list="deriv-symbols-list" id="m-symbol" placeholder="Select or type symbol..." required style="text-transform: uppercase;">
+                    <datalist id="deriv-symbols-list">
+                        <!-- EXACT FROM SCREENSHOT -->
+                        <option value="VOLATILITY_90_1S_INDEX">
+                        <option value="VOLATILITY_150_1S_INDEX">
+                        <option value="VOLATILITY_50_INDEX">
+                        <option value="VOLATILITY_25_INDEX">
+                        <option value="VOLATILITY_100_INDEX">
+                        <option value="VOLATILITY_75_INDEX">
+                        <option value="STEP_INDEX">
+                        <option value="STEP_INDEX_400">
+                        <!-- POPULAR DERIV SYNTHETICS -->
+                        <option value="VOLATILITY_10_INDEX">
+                        <option value="VOLATILITY_75_1S_INDEX">
+                        <option value="VOLATILITY_100_1S_INDEX">
+                        <option value="VOLATILITY_250_1S_INDEX">
+                        <option value="STEP_INDEX_200">
+                        <option value="STEP_INDEX_500">
+                        <option value="BOOM_1000_INDEX">
+                        <option value="BOOM_500_INDEX">
+                        <option value="BOOM_300_INDEX">
+                        <option value="CRASH_1000_INDEX">
+                        <option value="CRASH_500_INDEX">
+                        <option value="CRASH_300_INDEX">
+                        <option value="JUMP_100_INDEX">
+                        <option value="RANGE_BREAK_100_INDEX">
+                        <option value="RANGE_BREAK_200_INDEX">
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label>Direction</label>
+                    <select id="m-side">
+                        <option value="Long">BUY / Long</option>
+                        <option value="Short">SELL / Short</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Execution Date</label>
+                    <input type="date" id="m-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Lot Size (e.g. 0.001, 0.20, 1.0)</label>
+                    <input type="number" step="any" id="m-qty" placeholder="0.005" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Entry Price</label>
+                    <input type="number" step="any" id="m-entry" placeholder="e.g. 248100.50" required>
+                </div>
+                <div class="form-group">
+                    <label>Exit Price</label>
+                    <input type="number" step="any" id="m-exit" placeholder="e.g. 251400.00" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Planned Risk ($ Stop Loss)</label>
+                    <input type="number" step="any" id="m-risk" placeholder="e.g. 25">
+                </div>
+                <div class="form-group">
+                    <label>Swaps & Broker Fees ($)</label>
+                    <input type="number" step="any" id="m-fees" value="0.00">
+                </div>
+
+                <!-- MT5 DIRECT P&L OVERRIDE -->
+                <div class="form-group full" style="background: var(--bg-subtle); padding: 10px; border-radius: 8px; border: 1px dashed var(--border);">
+                    <label style="color: var(--blue);">Direct Net P&L Override (Optional)</label>
+                    <input type="number" step="any" id="m-direct-pnl" placeholder="Paste exact Net Profit ($) from MT5 terminal history">
+                    <span style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Leave blank to auto-calculate from Entry, Exit & Lot Size.</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Deriv Setup / Strategy</label>
+                    <select id="m-setup">
+                        <option value="Support & Resistance">Support & Resistance</option>
+                        <option value="Break & Retest">Break & Retest</option>
+                        <option value="Liquidity Hunt">Liquidity Hunt</option>
+                        <option value="Spike Catching">Spike Catching</option>
+                        <option value="Tick Scalping">Tick Scalping</option>
+                        <option value="Trend Continuation">Trend Continuation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Deriv Mistake Tag</label>
+                    <select id="m-mistake">
+                        <option value="None">None (Disciplined)</option>
+                        <option value="Overleveraged Lot Size">Overleveraged Lot Size</option>
+                        <option value="Trading Against the Spike">Trading Against the Spike</option>
+                        <option value="Holding Through Drawdown">Holding Through Drawdown</option>
+                        <option value="No Stop Loss">No Stop Loss</option>
+                        <option value="FOMO Entry">FOMO Entry</option>
+                        <option value="Early Exit">Early Exit</option>
+                        <option value="Revenge Trade">Revenge Trade</option>
+                    </select>
+                </div>
+
+                <div class="form-group full">
+                    <label>Journal Notes</label>
+                    <textarea id="m-notes" rows="2" placeholder="Market structure notes, psychology, spike timing..."></textarea>
+                </div>
+
+                <div class="form-group full" style="flex-direction: row; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="m-rules" checked style="width: 16px; height: 16px;">
+                    <label for="m-rules" style="cursor: pointer; text-transform: none; font-size: 13px; color: var(--text-main);">I followed my risk management and Deriv lot sizing rules</label>
+                </div>
+            </div>
+
+            <div style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-green">Save Deriv Trade</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let trades = [];
+    try {
+        const saved = localStorage.getItem('mft_deriv_mt5_trades_v2');
+        if (saved) trades = JSON.parse(saved);
+    } catch(e) {
+        trades = [];
+    }
+
+    let activeCalendarDate = new Date();
+
+    // Deriv Contract Sizing Matrix for MT5 exact symbols
+    function getDerivContractSize(symbol) {
+        const s = (symbol || '').toUpperCase();
+        if (s.includes('EURUSD') || s.includes('GBPUSD')) return 100000;
+        if (s.includes('XAUUSD')) return 100;
+        if (s.includes('STEP_INDEX') && !s.includes('400') && !s.includes('200') && !s.includes('500')) return 10;
+        return 1; // Volatility indices, Step 400, Boom/Crash contract size = 1
+    }
+
+    function formatMoney(n) {
+        const prefix = n < 0 ? '-$' : '$';
+        return prefix + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function evaluateTrade(t) {
+        if (t.directPnl !== undefined && t.directPnl !== null && !isNaN(t.directPnl) && t.directPnl !== '') {
+            const net = parseFloat(t.directPnl);
+            const rMultiple = (t.risk && t.risk > 0) ? (net / t.risk) : 0;
+            return { gross: net + (t.fees || 0), net, rMultiple };
+        }
+
+        const contractSize = getDerivContractSize(t.symbol);
+        const gross = t.side === 'Long'
+            ? (t.exit - t.entry) * t.qty * contractSize
+            : (t.entry - t.exit) * t.qty * contractSize;
+
+        const net = gross - (t.fees || 0);
+        const rMultiple = (t.risk && t.risk > 0) ? (net / t.risk) : 0;
+        return { gross, net, rMultiple };
+    }
+
+    function calculateStats() {
+        let totalNet = 0, grossWins = 0, grossLosses = 0;
+        let wins = 0, losses = 0, be = 0;
+        let sumR = 0, totalFees = 0, rulesCount = 0;
+        let mistakeCost = 0;
+
+        let currentWinStreak = 0, maxWinStreak = 0;
+        let currentLossStreak = 0, maxLossStreak = 0;
+        let peakEquity = 0, runningEquity = 0, maxDrawdown = 0;
+
+        const sorted = [...trades].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        sorted.forEach(t => {
+            const { net, rMultiple } = evaluateTrade(t);
+            t._net = net;
+            t._r = rMultiple;
+
+            totalNet += net;
+            runningEquity += net;
+            totalFees += (t.fees || 0);
+            sumR += rMultiple;
+            if (t.rules) rulesCount++;
+
+            if (runningEquity > peakEquity) peakEquity = runningEquity;
+            const dd = peakEquity - runningEquity;
+            if (dd > maxDrawdown) maxDrawdown = dd;
+
+            if (net > 0) {
+                wins++;
+                grossWins += net;
+                currentWinStreak++;
+                currentLossStreak = 0;
+                if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
+            } else if (net < 0) {
+                losses++;
+                grossLosses += Math.abs(net);
+                currentLossStreak++;
+                currentWinStreak = 0;
+                if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
+                if (t.mistake && t.mistake !== 'None') mistakeCost += Math.abs(net);
+            } else {
+                be++;
+            }
+        });
+
+        const totalTrades = sorted.length;
+        const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
+        const lossRate = totalTrades > 0 ? (losses / totalTrades) * 100 : 0;
+        const profitFactor = grossLosses > 0 ? (grossWins / grossLosses) : (grossWins > 0 ? grossWins : 0);
+        
+        const avgWin = wins > 0 ? grossWins / wins : 0;
+        const avgLoss = losses > 0 ? grossLosses / losses : 0;
+        const expectancy = ((winRate / 100) * avgWin) - ((lossRate / 100) * avgLoss);
+        const avgR = totalTrades > 0 ? (sumR / totalTrades) : 0;
+        const discipline = totalTrades > 0 ? (rulesCount / totalTrades) * 100 : 100;
+        const wlRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
+
+        return {
+            totalNet, wins, losses, be, totalTrades, winRate, profitFactor,
+            avgWin, avgLoss, expectancy, avgR, discipline, maxDrawdown,
+            maxWinStreak, maxLossStreak, mistakeCost, totalFees, wlRatio,
+            grossWins, grossLosses
+        };
+    }
+
+    function switchView(viewId) {
+        ['dashboard', 'calendar', 'trades', 'analytics'].forEach(v => {
+            const el = document.getElementById(`view-${v}`);
+            if (el) el.style.display = (v === viewId) ? 'block' : 'none';
+        });
+
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.classList.toggle('active', btn.textContent.toLowerCase().includes(viewId));
+        });
+        document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.textContent.toLowerCase().includes(viewId));
+        });
+
+        if (viewId === 'dashboard') setTimeout(renderCharts, 20);
+        if (viewId === 'calendar') renderCalendar();
+        if (viewId === 'analytics') renderAnalytics();
+    }
+
+    function openModal() {
+        document.getElementById('m-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('tradeModal').style.display = 'flex';
+    }
+    function closeModal() {
+        document.getElementById('tradeModal').style.display = 'none';
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        const directPnlVal = document.getElementById('m-direct-pnl').value;
+        const rawSym = document.getElementById('m-symbol').value.trim().toUpperCase();
+
+        const trade = {
+            id: Date.now(),
+            symbol: rawSym,
+            side: document.getElementById('m-side').value,
+            date: document.getElementById('m-date').value,
+            setup: document.getElementById('m-setup').value,
+            entry: parseFloat(document.getElementById('m-entry').value),
+            exit: parseFloat(document.getElementById('m-exit').value),
+            qty: parseFloat(document.getElementById('m-qty').value),
+            risk: parseFloat(document.getElementById('m-risk').value) || 0,
+            fees: parseFloat(document.getElementById('m-fees').value) || 0,
+            directPnl: directPnlVal !== '' ? parseFloat(directPnlVal) : null,
+            mistake: document.getElementById('m-mistake').value,
+            notes: document.getElementById('m-notes').value,
+            rules: document.getElementById('m-rules').checked
+        };
+
+        trades.push(trade);
+        trades.sort((a,b) => new Date(a.date) - new Date(b.date));
+        localStorage.setItem('mft_deriv_mt5_trades_v2', JSON.stringify(trades));
+
+        closeModal();
+        e.target.reset();
+        refreshApp();
+    }
+
+    function deleteTrade(id) {
+        if (confirm("Delete this Deriv execution?")) {
+            trades = trades.filter(t => t.id !== id);
+            localStorage.setItem('mft_deriv_mt5_trades_v2', JSON.stringify(trades));
+            closeDrawer();
+            refreshApp();
+        }
+    }
+
+    function clearAllData() {
+        if (confirm("Permanently erase all Deriv trade logs?")) {
+            trades = [];
+            localStorage.removeItem('mft_deriv_mt5_trades_v2');
+            refreshApp();
+        }
+    }
+
+    function refreshApp() {
+        const stats = calculateStats();
+
+        document.getElementById('topbar-pnl').innerText = formatMoney(stats.totalNet);
+        document.getElementById('topbar-pnl').className = `font-mono ${stats.totalNet >= 0 ? 'text-green' : 'text-red'}`;
+        document.getElementById('topbar-wr').innerText = `${stats.winRate.toFixed(1)}%`;
+        document.getElementById('topbar-pf').innerText = stats.profitFactor.toFixed(2);
+        document.getElementById('topbar-rules').innerText = `${stats.discipline.toFixed(0)}%`;
+
+        const kpiPnl = document.getElementById('kpi-net-pnl');
+        kpiPnl.innerText = formatMoney(stats.totalNet);
+        kpiPnl.className = `kpi-value font-mono ${stats.totalNet >= 0 ? 'text-green' : 'text-red'}`;
+        document.getElementById('kpi-trades-count').innerText = `${stats.totalTrades} closed Deriv trades`;
+
+        document.getElementById('kpi-win-rate').innerText = `${stats.winRate.toFixed(1)}%`;
+        document.getElementById('kpi-wl-ratio').innerText = `${stats.wins}W - ${stats.losses}L`;
+        document.getElementById('kpi-break-even').innerText = `${stats.be} Breakeven executions`;
+
+        document.getElementById('kpi-profit-factor').innerText = stats.profitFactor.toFixed(2);
+        document.getElementById('kpi-gross-ratio').innerText = `Gross: +$${Math.round(stats.grossWins)} / -$${Math.round(stats.grossLosses)}`;
+
+        document.getElementById('kpi-expectancy').innerText = formatMoney(stats.expectancy);
+        document.getElementById('kpi-expectancy').className = `kpi-value font-mono ${stats.expectancy >= 0 ? 'text-green' : 'text-red'}`;
+        document.getElementById('kpi-avg-r').innerText = `Avg R-Multiple: ${stats.avgR >= 0 ? '+' : ''}${stats.avgR.toFixed(2)}R`;
+
+        document.getElementById('stat-avg-win').innerText = formatMoney(stats.avgWin);
+        document.getElementById('stat-avg-loss').innerText = formatMoney(-stats.avgLoss);
+        document.getElementById('stat-wl-ratio').innerText = stats.wlRatio.toFixed(2);
+
+        document.getElementById('stat-max-win-streak').innerText = `${stats.maxWinStreak} trades`;
+        document.getElementById('stat-max-loss-streak').innerText = `${stats.maxLossStreak} trades`;
+        document.getElementById('stat-max-dd-val').innerText = formatMoney(-stats.maxDrawdown);
+        document.getElementById('chart-max-dd').innerText = `Max DD: -$${Math.round(stats.maxDrawdown)}`;
+
+        document.getElementById('stat-discipline-score').innerText = `${stats.discipline.toFixed(0)}%`;
+        document.getElementById('stat-mistake-cost').innerText = formatMoney(-stats.mistakeCost);
+        document.getElementById('stat-commissions-total').innerText = formatMoney(stats.totalFees);
+
+        renderTradesTable(trades);
+        renderCalendar();
+        renderAnalytics();
+        renderCharts();
+    }
+
+    function renderTradesTable(list) {
+        const tbody = document.getElementById('trades-table-body');
+        tbody.innerHTML = '';
+
+        if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 40px; color: var(--text-muted);">No Deriv trades logged. Click "+ Log Deriv Trade" or "Load Demo" to begin.</td></tr>`;
+            return;
+        }
+
+        list.forEach(t => {
+            const { net, rMultiple } = evaluateTrade(t);
+            const isWin = net >= 0;
+            const tr = document.createElement('tr');
+            tr.onclick = () => openDrawer(t);
+            tr.innerHTML = `
+                <td class="font-mono text-muted" style="font-size: 11px;">${t.date}</td>
+                <td style="font-weight: 700; font-family: ui-monospace, monospace; font-size: 11px;">
+                    <span class="deriv-sym-icon">📈</span>${t.symbol}
+                </td>
+                <td><span class="badge ${t.side === 'Long' ? 'badge-green' : 'badge-red'}">${t.side === 'Long' ? 'BUY' : 'SELL'}</span></td>
+                <td class="font-mono" style="font-size: 11px;">${t.entry} &rarr; ${t.exit}</td>
+                <td class="font-mono">${t.qty}</td>
+                <td class="font-mono font-bold ${isWin ? 'text-green' : 'text-red'}">${formatMoney(net)}</td>
+                <td class="font-mono ${rMultiple >= 0 ? 'text-green' : 'text-red'}">${t.risk > 0 ? (rMultiple >= 0 ? '+' : '') + rMultiple.toFixed(2) + 'R' : '--'}</td>
+                <td><span class="badge badge-neutral">${t.setup}</span></td>
+                <td>${t.mistake !== 'None' ? `<span class="badge badge-red">${t.mistake}</span>` : '<span class="text-muted">--</span>'}</td>
+                <td>${t.rules ? '<span class="text-green">&#10003;</span>' : '<span class="text-red">&#10005;</span>'}</td>
+                <td style="text-align: right;" onclick="event.stopPropagation()">
+                    <button class="btn btn-secondary btn-sm" onclick="deleteTrade(${t.id})">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function filterTradesTable() {
+        const q = document.getElementById('trade-search').value.toLowerCase();
+        const side = document.getElementById('trade-filter-side').value;
+
+        const filtered = trades.filter(t => {
+            const matchesQuery = t.symbol.toLowerCase().includes(q) ||
+                                 t.setup.toLowerCase().includes(q) ||
+                                 (t.mistake && t.mistake.toLowerCase().includes(q));
+            const matchesSide = (side === 'ALL') || (t.side === side);
+            return matchesQuery && matchesSide;
+        });
+        renderTradesTable(filtered);
+    }
+
+    function openDrawer(t) {
+        const { net, rMultiple } = evaluateTrade(t);
+        document.getElementById('drawer-title').innerText = `${t.symbol}`;
+        document.getElementById('drawer-date').innerText = `${t.date} • Deriv MT5 Account`;
+
+        const body = document.getElementById('drawer-body');
+        body.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; background: var(--bg-subtle); border-radius: 8px;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Realized Net P&L</div>
+                    <div class="font-mono font-bold ${net >= 0 ? 'text-green' : 'text-red'}" style="font-size: 24px;">${formatMoney(net)}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Return on Risk</div>
+                    <div class="font-mono font-bold ${rMultiple >= 0 ? 'text-green' : 'text-red'}" style="font-size: 20px;">${t.risk > 0 ? rMultiple.toFixed(2) + 'R' : 'Unspecified'}</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+                <div style="padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="text-muted">Execution</div>
+                    <div class="font-mono" style="font-weight: 700; margin-top: 2px;">${t.entry} &rarr; ${t.exit}</div>
+                </div>
+                <div style="padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="text-muted">Deriv Lot Size</div>
+                    <div class="font-mono" style="font-weight: 700; margin-top: 2px;">${t.qty} Lot</div>
+                </div>
+                <div style="padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="text-muted">Planned S/L Risk</div>
+                    <div class="font-mono" style="font-weight: 700; margin-top: 2px;">${t.risk > 0 ? formatMoney(t.risk) : 'None'}</div>
+                </div>
+                <div style="padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <div class="text-muted">MT5 Swaps / Fees</div>
+                    <div class="font-mono" style="font-weight: 700; margin-top: 2px;">${formatMoney(t.fees || 0)}</div>
+                </div>
+            </div>
+
+            <div style="padding: 12px; border: 1px solid var(--border); border-radius: 8px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Deriv Edge & Tags</div>
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <span class="badge badge-neutral">Setup: ${t.setup}</span>
+                    <span class="badge ${t.mistake !== 'None' ? 'badge-red' : 'badge-green'}">Mistake: ${t.mistake}</span>
+                    <span class="badge ${t.rules ? 'badge-green' : 'badge-red'}">${t.rules ? 'Followed Lot Rules' : 'Broke Lot Rules'}</span>
+                </div>
+            </div>
+
+            <div style="padding: 12px; border: 1px solid var(--border); border-radius: 8px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Deriv Notes</div>
+                <p style="font-size: 13px; margin-top: 6px; line-height: 1.5; color: var(--text-main);">${t.notes ? t.notes : 'No notes entered for this trade.'}</p>
+            </div>
+
+            <button class="btn btn-danger" onclick="deleteTrade(${t.id})" style="margin-top: 10px;">Delete Deriv Entry</button>
+        `;
+
+        document.getElementById('drawerOverlay').style.display = 'block';
+        document.getElementById('tradeDrawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+        document.getElementById('drawerOverlay').style.display = 'none';
+        document.getElementById('tradeDrawer').classList.remove('open');
+    }
+
+    function changeMonth(delta) {
+        activeCalendarDate.setMonth(activeCalendarDate.getMonth() + delta);
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid-box');
+        grid.innerHTML = '';
+
+        const year = activeCalendarDate.getFullYear();
+        const month = activeCalendarDate.getMonth();
+        const monthName = activeCalendarDate.toLocaleString('default', { month: 'long' });
+        document.getElementById('calendar-current-month').innerText = `${monthName} ${year}`;
+
+        const dailyMap = {};
+        trades.forEach(t => {
+            const { net } = evaluateTrade(t);
+            if (!dailyMap[t.date]) dailyMap[t.date] = { pnl: 0, count: 0, trades: [] };
+            dailyMap[t.date].pnl += net;
+            dailyMap[t.date].count++;
+            dailyMap[t.date].trades.push(t);
+        });
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        let dayCounter = 1;
+        let weekPnl = 0;
+        let weekTradeCount = 0;
+
+        while (dayCounter <= daysInMonth) {
+            weekPnl = 0;
+            weekTradeCount = 0;
+
+            for (let dow = 0; dow < 7; dow++) {
+                if ((dayCounter === 1 && dow < firstDay) || (dayCounter > daysInMonth)) {
+                    const empty = document.createElement('div');
+                    empty.className = 'cal-day is-empty';
+                    grid.appendChild(empty);
+                } else {
+                    const dStr = dayCounter < 10 ? `0${dayCounter}` : `${dayCounter}`;
+                    const mStr = (month + 1) < 10 ? `0${month + 1}` : `${month + 1}`;
+                    const dateKey = `${year}-${mStr}-${dStr}`;
+                    const dayData = dailyMap[dateKey];
+
+                    const cell = document.createElement('div');
+                    cell.className = 'cal-day';
+
+                    if (dayData) {
+                        weekPnl += dayData.pnl;
+                        weekTradeCount += dayData.count;
+                        cell.classList.add(dayData.pnl >= 0 ? 'has-profit' : 'has-loss');
+                        cell.onclick = () => {
+                            if (dayData.trades.length > 0) openDrawer(dayData.trades[0]);
+                        };
+                        cell.innerHTML = `
+                            <div style="font-size: 11px; font-weight: 700;">${dayCounter}</div>
+                            <div style="text-align: center; margin: 4px 0;">
+                                <div class="font-mono font-bold ${dayData.pnl >= 0 ? 'text-green' : 'text-red'}" style="font-size: 13px;">${formatMoney(dayData.pnl)}</div>
+                                <div class="text-muted" style="font-size: 9px; text-transform: uppercase;">${dayData.count} trade${dayData.count > 1 ? 's' : ''}</div>
+                            </div>
+                            <div></div>
+                        `;
+                    } else {
+                        cell.innerHTML = `<div style="font-size: 11px; font-weight: 700; color: var(--text-light);">${dayCounter}</div><div></div><div></div>`;
+                    }
+                    grid.appendChild(cell);
+                    dayCounter++;
+                }
+            }
+
+            const weekCell = document.createElement('div');
+            weekCell.className = 'cal-week-rollup';
+            if (weekTradeCount > 0) {
+                weekCell.innerHTML = `
+                    <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Week Net</div>
+                    <div class="font-mono font-bold ${weekPnl >= 0 ? 'text-green' : 'text-red'}" style="font-size: 13px; margin: 2px 0;">${formatMoney(weekPnl)}</div>
+                    <div class="badge badge-neutral" style="font-size: 9px;">${weekTradeCount} trades</div>
+                `;
+            } else {
+                weekCell.innerHTML = `<div style="font-size: 10px; color: var(--text-light);">--</div>`;
+            }
+            grid.appendChild(weekCell);
+        }
+    }
+
+    function renderAnalytics() {
+        const dowStats = {
+            0: { name: 'Sunday', count: 0, wins: 0, pnl: 0, grossW: 0, grossL: 0 },
+            1: { name: 'Monday', count: 0, wins: 0, pnl: 0, grossW: 0, grossL: 0 },
+            2: { name: 'Tuesday', count: 0, wins: 0, pnl: 0, grossW: 0, grossL: 0 },
+            3: { name: 'Wednesday', count: 0, wins: 0, pnl: 0, grossW: 0, grossL: 0 },
+            4: { name: 'Thursday', count: 0, wins: 0, pnl: 0, grossW: 0, grossL: 0 },
+            5: { name: 'Friday', count: 0, wins: 0, pnl: 0, grossW: 0, grossL: 0 },
+            6: { name: 'Saturday', count: 0, wins: 0, pnl: 0, grossW: 0, grossL: 0 }
+        };
+
+        const instrumentMap = {};
+        const setupMap = {};
+
+        trades.forEach(t => {
+            const { net } = evaluateTrade(t);
+            const d = new Date(t.date + 'T00:00:00');
+            const dayIdx = d.getDay();
+
+            if (dowStats[dayIdx]) {
+                dowStats[dayIdx].count++;
+                dowStats[dayIdx].pnl += net;
+                if (net > 0) {
+                    dowStats[dayIdx].wins++;
+                    dowStats[dayIdx].grossW += net;
+                } else if (net < 0) {
+                    dowStats[dayIdx].grossL += Math.abs(net);
+                }
+            }
+
+            if (!instrumentMap[t.symbol]) instrumentMap[t.symbol] = { count: 0, wins: 0, pnl: 0 };
+            instrumentMap[t.symbol].count++;
+            instrumentMap[t.symbol].pnl += net;
+            if (net > 0) instrumentMap[t.symbol].wins++;
+
+            if (!setupMap[t.setup]) setupMap[t.setup] = { count: 0, wins: 0, pnl: 0 };
+            setupMap[t.setup].count++;
+            setupMap[t.setup].pnl += net;
+            if (net > 0) setupMap[t.setup].wins++;
+        });
+
+        const instContainer = document.getElementById('analytics-instruments-container');
+        instContainer.innerHTML = '';
+        Object.entries(instrumentMap).forEach(([symbol, d]) => {
+            const wr = d.count > 0 ? ((d.wins / d.count) * 100).toFixed(0) : 0;
+            const card = document.createElement('div');
+            card.style.padding = '14px';
+            card.style.border = '1px solid var(--border)';
+            card.style.borderRadius = '8px';
+            card.style.background = 'var(--bg-subtle)';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 12px; font-family: ui-monospace, monospace;">
+                    <span style="display: flex; align-items: center;"><span class="deriv-sym-icon">📈</span>${symbol}</span>
+                    <span class="font-mono ${d.pnl >= 0 ? 'text-green' : 'text-red'}">${formatMoney(d.pnl)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+                    <span>Win Rate</span>
+                    <strong style="color: var(--text-main);">${wr}%</strong>
+                </div>
+                <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 4px;">
+                    <div style="width: ${wr}%; background: var(--green); height: 100%;"></div>
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">${d.count} executions</div>
+            `;
+            instContainer.appendChild(card);
+        });
+
+        const tbody = document.getElementById('day-of-week-table-body');
+        tbody.innerHTML = '';
+        Object.values(dowStats).forEach(s => {
+            if (s.count === 0) return;
+            const wr = ((s.wins / s.count) * 100).toFixed(0);
+            const pf = s.grossL > 0 ? (s.grossW / s.grossL).toFixed(2) : s.grossW > 0 ? 'Max' : '0.00';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 700;">${s.name}</td>
+                <td>${s.count}</td>
+                <td class="font-mono">${wr}%</td>
+                <td class="font-mono">${pf}</td>
+                <td class="font-mono text-green">${formatMoney(s.grossW)}</td>
+                <td class="font-mono text-red">${formatMoney(-s.grossL)}</td>
+                <td class="font-mono font-bold ${s.pnl >= 0 ? 'text-green' : 'text-red'}">${formatMoney(s.pnl)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const container = document.getElementById('analytics-playbook-container');
+        container.innerHTML = '';
+        Object.entries(setupMap).forEach(([setup, d]) => {
+            const wr = d.count > 0 ? ((d.wins / d.count) * 100).toFixed(0) : 0;
+            const card = document.createElement('div');
+            card.style.padding = '14px';
+            card.style.border = '1px solid var(--border)';
+            card.style.borderRadius = '8px';
+            card.style.background = 'var(--bg-subtle)';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 13px;">
+                    <span>${setup}</span>
+                    <span class="font-mono ${d.pnl >= 0 ? 'text-green' : 'text-red'}">${formatMoney(d.pnl)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+                    <span>Win Rate</span>
+                    <strong style="color: var(--text-main);">${wr}%</strong>
+                </div>
+                <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 4px;">
+                    <div style="width: ${wr}%; background: var(--green); height: 100%;"></div>
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">${d.count} executions</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderCharts() {
+        drawEquityChart();
+        drawDailyBarChart();
+    }
+
+    function setupHiDPI(canvas) {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentNode.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        return { ctx, width: rect.width, height: rect.height };
+    }
+
+    function drawEquityChart() {
+        const canvas = document.getElementById('equityCanvas');
+        if (!canvas) return;
+        const { ctx, width, height } = setupHiDPI(canvas);
+
+        ctx.clearRect(0, 0, width, height);
+
+        let cumulative = [0];
+        let running = 0;
+        trades.forEach(t => {
+            const { net } = evaluateTrade(t);
+            running += net;
+            cumulative.push(running);
+        });
+
+        if (cumulative.length <= 1) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No closed Deriv trades logged.', width / 2, height / 2);
+            return;
+        }
+
+        const max = Math.max(...cumulative, 50);
+        const min = Math.min(...cumulative, -20);
+        const range = max - min || 1;
+        const padX = 40, padY = 25;
+        const chartW = width - padX * 2;
+        const chartH = height - padY * 2;
+
+        const getX = (i) => padX + (i / (cumulative.length - 1)) * chartW;
+        const getY = (v) => height - padY - ((v - min) / range) * chartH;
+
+        const zeroY = getY(0);
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(padX, zeroY);
+        ctx.lineTo(width - padX, zeroY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 2.5;
+        cumulative.forEach((val, i) => {
+            if (i === 0) ctx.moveTo(getX(i), getY(val));
+            else ctx.lineTo(getX(i), getY(val));
+        });
+        ctx.stroke();
+
+        ctx.lineTo(getX(cumulative.length - 1), height - padY);
+        ctx.lineTo(getX(0), height - padY);
+        ctx.closePath();
+        const gradient = ctx.createLinearGradient(0, padY, 0, height - padY);
+        gradient.addColorStop(0, 'rgba(5, 150, 105, 0.15)');
+        gradient.addColorStop(1, 'rgba(5, 150, 105, 0.0)');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    }
+
+    function drawDailyBarChart() {
+        const canvas = document.getElementById('dailyBarCanvas');
+        if (!canvas) return;
+        const { ctx, width, height } = setupHiDPI(canvas);
+
+        ctx.clearRect(0, 0, width, height);
+
+        const dailyMap = {};
+        trades.forEach(t => {
+            const { net } = evaluateTrade(t);
+            dailyMap[t.date] = (dailyMap[t.date] || 0) + net;
+        });
+
+        const entries = Object.entries(dailyMap);
+        if (entries.length === 0) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No session data available.', width / 2, height / 2);
+            return;
+        }
+
+        const vals = entries.map(e => e[1]);
+        const max = Math.max(...vals, 50);
+        const min = Math.min(...vals, -50);
+        const range = max - min || 1;
+        const padX = 25, padY = 25;
+        const chartW = width - padX * 2;
+        const chartH = height - padY * 2;
+
+        const getY = (v) => height - padY - ((v - min) / range) * chartH;
+        const zeroY = getY(0);
+
+        const barWidth = Math.min(22, (chartW / entries.length) - 6);
+
+        entries.forEach((e, i) => {
+            const x = padX + (i * (chartW / entries.length)) + 4;
+            const y = getY(e[1]);
+            ctx.fillStyle = e[1] >= 0 ? '#059669' : '#e11d48';
+            ctx.fillRect(x, Math.min(y, zeroY), barWidth, Math.abs(y - zeroY) || 2);
+        });
+    }
+
+    function loadDerivDemo() {
+        trades = [
+            { id: 1, symbol: 'VOLATILITY_90_1S_INDEX', side: 'Long', date: '2026-09-01', setup: 'Support & Resistance', entry: 5410.20, exit: 5490.50, qty: 0.5, risk: 20, fees: 0.40, directPnl: 39.75, mistake: 'None', rules: true, notes: 'Clean bounce off 15m order block.' },
+            { id: 2, symbol: 'VOLATILITY_150_1S_INDEX', side: 'Short', date: '2026-09-02', setup: 'Break & Retest', entry: 8200.00, exit: 8080.00, qty: 0.2, risk: 15, fees: 0.30, directPnl: 23.70, mistake: 'None', rules: true, notes: 'Trendline break and rejection.' },
+            { id: 3, symbol: 'STEP_INDEX_400', side: 'Long', date: '2026-09-03', setup: 'Trend Continuation', entry: 12450.0, exit: 12520.0, qty: 0.2, risk: 10, fees: 0.10, directPnl: 13.90, mistake: 'None', rules: true, notes: 'Caught the multi-step expansion.' },
+            { id: 4, symbol: 'VOLATILITY_75_INDEX', side: 'Long', date: '2026-09-04', setup: 'Liquidity Hunt', entry: 245000, exit: 241500, qty: 0.005, risk: 20, fees: 0.50, directPnl: -18.00, mistake: 'Overleveraged Lot Size', rules: false, notes: 'Entered too early before liquidity sweep confirmed.' },
+            { id: 5, symbol: 'VOLATILITY_50_INDEX', side: 'Short', date: '2026-09-07', setup: 'Break & Retest', entry: 320.50, exit: 305.10, qty: 1.0, risk: 12, fees: 0.20, directPnl: 15.20, mistake: 'None', rules: true, notes: 'Clean retest of previous day low.' },
+            { id: 6, symbol: 'STEP_INDEX', side: 'Long', date: '2026-09-08', setup: 'Support & Resistance', entry: 8920.0, exit: 8965.0, qty: 0.1, risk: 25, fees: 0.30, directPnl: 44.70, mistake: 'None', rules: true, notes: 'Multi-step trend continuation.' },
+            { id: 7, symbol: 'VOLATILITY_25_INDEX', side: 'Long', date: '2026-09-09', setup: 'Trend Continuation', entry: 1820.0, exit: 1855.0, qty: 0.5, risk: 10, fees: 0.10, directPnl: 17.40, mistake: 'None', rules: true, notes: 'Clean ride on the 20 EMA.' },
+            { id: 8, symbol: 'VOLATILITY_100_INDEX', side: 'Short', date: '2026-09-10', setup: 'Liquidity Hunt', entry: 1280.0, exit: 1240.0, qty: 0.5, risk: 15, fees: 0.20, directPnl: 19.80, mistake: 'None', rules: true, notes: 'Clean sell off supply.' }
+        ];
+
+        localStorage.setItem('mft_deriv_mt5_trades_v2', JSON.stringify(trades));
+        refreshApp();
+    }
+
+    function exportCSV() {
+        if (trades.length === 0) { alert('No Deriv trades to export.'); return; }
+        let csv = 'ID,Symbol,Side,Date,Setup,Entry,Exit,LotSize,Risk,Fees,NetPnL,RMultiple,Mistake,Rules,Notes\n';
+        trades.forEach(t => {
+            const { net, rMultiple } = evaluateTrade(t);
+            csv += `"${t.id}","${t.symbol}","${t.side}","${t.date}","${t.setup}","${t.entry}","${t.exit}","${t.qty}","${t.risk || 0}","${t.fees || 0}","${net.toFixed(2)}","${rMultiple.toFixed(2)}","${t.mistake || 'None'}","${t.rules}","${(t.notes || '').replace(/"/g, '""')}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `MFT_Deriv_MT5_Trades_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+    }
+
+    window.addEventListener('resize', renderCharts);
+    window.addEventListener('DOMContentLoaded', () => {
+        refreshApp();
+    });
+</script>
+</body>
+</html>
